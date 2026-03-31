@@ -15,16 +15,26 @@ pipeline {
 
         stage('Terraform Init') {
             steps {
-                sh 'terraform init'
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-creds'
+                ]]) {
+                    sh 'terraform init'
+                }
             }
         }
 
         stage('Terraform Apply') {
             steps {
-                sh '''
-                    terraform plan -out=tfplan
-                    terraform apply -auto-approve tfplan
-                '''
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-creds'
+                ]]) {
+                    sh '''
+                        terraform plan -out=tfplan
+                        terraform apply -auto-approve tfplan
+                    '''
+                }
             }
         }
 
@@ -42,12 +52,14 @@ pipeline {
                             )
                         ]
                     )
+
                     if (destroyChoice == 'yes') {
-                         withCredentials([[
+                        withCredentials([[
                             $class: 'AmazonWebServicesCredentialsBinding',
                             credentialsId: 'aws-creds'
                         ]]) {
-                        sh 'terraform destroy -auto-approve'
+                            sh 'terraform destroy -auto-approve'
+                        }
                     } else {
                         echo "Skipping destroy"
                     }
