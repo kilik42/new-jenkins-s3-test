@@ -43,6 +43,10 @@ pipeline {
                         ]
                     )
                     if (destroyChoice == 'yes') {
+                         withCredentials([[
+                            $class: 'AmazonWebServicesCredentialsBinding',
+                            credentialsId: 'aws-creds'
+                        ]]) {
                         sh 'terraform destroy -auto-approve'
                     } else {
                         echo "Skipping destroy"
