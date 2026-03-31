@@ -32,7 +32,7 @@ pipeline {
             steps {
                 script {
                     def destroyChoice = input(
-                        message: 'Do you want to run terraform destroy?',
+                        message: 'Do you want to run terraform destroy? or skip it?',
                         ok: 'Submit',
                         parameters: [
                             choice(
