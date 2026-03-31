@@ -7,6 +7,7 @@ pipeline {
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 checkout scm
@@ -24,16 +25,24 @@ pipeline {
             }
         }
 
+        stage('Terraform Plan') {
+            steps {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-creds'
+                ]]) {
+                    sh 'terraform plan -out=tfplan'
+                }
+            }
+        }
+
         stage('Terraform Apply') {
             steps {
                 withCredentials([[
                     $class: 'AmazonWebServicesCredentialsBinding',
                     credentialsId: 'aws-creds'
                 ]]) {
-                    sh '''
-                        terraform plan -out=tfplan
-                        terraform apply -auto-approve tfplan
-                    '''
+                    sh 'terraform apply -auto-approve tfplan'
                 }
             }
         }
@@ -42,7 +51,7 @@ pipeline {
             steps {
                 script {
                     def destroyChoice = input(
-                        message: 'Do you want to run terraform destroy? or skip it?',
+                        message: 'Do you want to run terraform destroy?',
                         ok: 'Submit',
                         parameters: [
                             choice(
@@ -61,10 +70,22 @@ pipeline {
                             sh 'terraform destroy -auto-approve'
                         }
                     } else {
-                        echo "Skipping destroy"
+                        echo 'Skipping destroy'
                     }
                 }
             }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline finished.'
+        }
+        success {
+            echo 'Terraform deployment successful.'
+        }
+        failure {
+            echo 'Pipeline failed. Check logs.'
         }
     }
 }
